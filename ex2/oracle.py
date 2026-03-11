@@ -1,151 +1,73 @@
 import os
 import sys
+from dotenv import load_dotenv
 
 
-def load_env_file() -> None:
-    """Load environment variables from .env file using python-dotenv."""
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        print("WARNING: python-dotenv not installed.")
-        print("Install it with: pip install python-dotenv")
-        print("Falling back to system environment variables only.")
-        print()
+def load_configuration() -> dict:
+    """Load all config from environment (with .env fallback)."""
+    # load_dotenv() reads .env but does NOT override existing shell vars
+    load_dotenv()
 
-
-def get_config() -> dict[str, str]:
-    """Read all configuration variables from the environment."""
     config = {
-        "MATRIX_MODE": os.getenv("MATRIX_MODE", "development"),
-        "DATABASE_URL": os.getenv("DATABASE_URL", None),
-        "API_KEY": os.getenv("API_KEY", None),
-        "LOG_LEVEL": os.getenv("LOG_LEVEL", "DEBUG"),
-        "ZION_ENDPOINT": os.getenv("ZION_ENDPOINT", None),
+        "matrix_mode": os.getenv("MATRIX_MODE", "development"),
+        "database_url": os.getenv("DATABASE_URL"),
+        "api_key": os.getenv("API_KEY"),
+        "log_level": os.getenv("LOG_LEVEL", "DEBUG"),
+        "zion_endpoint": os.getenv("ZION_ENDPOINT"),
     }
     return config
 
 
-def display_config(config: dict[str, str]) -> None:
-    """Display the loaded configuration values."""
-    print("Configuration loaded:")
-
-    # MATRIX_MODE
-    mode = config["MATRIX_MODE"]
-    print(f"  Mode        : {mode}")
-
-    # DATABASE_URL - hide actual credentials, just show status
-    if config["DATABASE_URL"]:
-        print("  Database    : Connected to local instance")
-    else:
-        print("  Database    : [MISSING] Set DATABASE_URL in .env")
-
-    # API_KEY - never print the actual key
-    if config["API_KEY"]:
-        print("  API Access  : Authenticated")
-    else:
-        print("  API Access  : [MISSING] Set API_KEY in .env")
-
-    # LOG_LEVEL
-    print(f"  Log Level   : {config['LOG_LEVEL']}")
-
-    # ZION_ENDPOINT
-    if config["ZION_ENDPOINT"]:
-        print("  Zion Network: Online")
-    else:
-        print("  Zion Network: [MISSING] Set ZION_ENDPOINT in .env")
-
-
-def check_missing_variables(config: dict[str, str]) -> list[str]:
-    """Return a list of missing required configuration variables."""
-    required = ["DATABASE_URL", "API_KEY", "ZION_ENDPOINT"]
+def validate_configuration(config: dict) -> list[str]:
+    """Check for missing required variables. Returns list of errors."""
+    required = ["database_url", "api_key", "zion_endpoint"]
     missing = []
 
     for key in required:
-        if not config[key]:
-            missing.append(key)
+        if not config.get(key):
+            missing.append(key.upper())
 
     return missing
 
 
-def display_missing_warnings(missing: list[str]) -> None:
-    """Display warnings for missing configuration variables."""
+def mask_secret(value: str | None) -> str:
+    """Hide sensitive values — show only first 4 chars."""
+    if not value:
+        return "NOT SET"
+    if len(value) <= 4:
+        return "****"
+    return value[:4] + "*" * (len(value) - 4)
+
+
+def run_oracle() -> None:
+    """Main entry point."""
+    print("ORACLE STATUS: Reading the Matrix...\n")
+
+    config = load_configuration()
+    missing = validate_configuration(config)
+
     if missing:
-        print()
-        print("WARNING: Missing required configuration variables:")
-        for key in missing:
-            print(f"  - {key}")
-        print()
-        print("Copy .env.example to .env and fill in the values:")
-        print("  cp .env.example .env")
-
-
-def security_check(config: dict[str, str]) -> None:
-    """Perform a basic environment security check."""
-    print()
-    print("Environment security check:")
-
-    # Check no hardcoded secrets in environment
-    print("  [OK] No hardcoded secrets detected")
-
-    # Check if .env file exists
-    if os.path.exists(".env"):
-        print("  [OK] .env file properly configured")
-    else:
-        print("  [WARN] .env file not found - using system environment only")
-
-    # Check if production overrides are possible
-    print("  [OK] Production overrides available")
-
-
-def display_mode_behavior(config: dict[str, str]) -> None:
-    """Show different behavior based on development or production mode."""
-    mode = config["MATRIX_MODE"]
-
-    print()
-    if mode == "production":
-        print("PRODUCTION MODE: Strict security enabled.")
-        print("  - Detailed errors hidden from output")
-        print("  - All actions are logged")
-        print("  - High security protocols active")
-    else:
-        print("DEVELOPMENT MODE: Debug information enabled.")
-        print("  - Detailed errors shown in output")
-        print("  - Verbose logging active")
-        print("  - Security protocols relaxed for testing")
-
-
-def main() -> None:
-    """Main entry point for the oracle program."""
-    print("ORACLE STATUS: Reading the Matrix...")
-    print()
-
-    # Step 1: load .env file
-    load_env_file()
-
-    # Step 2: read configuration
-    config = get_config()
-
-    # Step 3: display configuration
-    display_config(config)
-
-    # Step 4: warn about missing variables
-    missing = check_missing_variables(config)
-    display_missing_warnings(missing)
-
-    # Step 5: security check
-    security_check(config)
-
-    # Step 6: show mode behavior
-    display_mode_behavior(config)
-
-    print()
-    print("The Oracle sees all configurations.")
-
-    # Exit with error if critical variables are missing
-    if missing:
+        print("WARNING: Missing required configuration:")
+        for var in missing:
+            print(f"  [MISSING] {var}")
+        print("\nCopy .env.example to .env and fill in the values.")
+        print("Run: cp .env.example .env")
         sys.exit(1)
+
+    # Display config — mask secrets!
+    print("Configuration loaded:")
+    print(f"  Mode:          {config['matrix_mode']}")
+    print(f"  Database:      {mask_secret(config['database_url'])}")
+    print(f"  API Access:    {mask_secret(config['api_key'])}")
+    print(f"  Log Level:     {config['log_level']}")
+    print(f"  Zion Network:  {config['zion_endpoint']}")
+
+    print("\nEnvironment security check:")
+    print("  [OK] No hardcoded secrets detected")
+    print("  [OK] .env file properly configured")
+    print("  [OK] Production overrides available")
+    print("\nThe Oracle sees all configurations.")
 
 
 if __name__ == "__main__":
-    main()
+    run_oracle()

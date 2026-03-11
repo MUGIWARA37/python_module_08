@@ -30,7 +30,7 @@ def display_outside_venv() -> None:
     print("The machines can see everything you install.")
     print()
     print("To enter the construct, run:")
-    print("  python -m venv matrix_env or python -m virtualenv matrix_env")
+    print("  python3 -m venv matrix_env or python3 -m virtualenv matrix_env")
     print("  source matrix_env/bin/activate")
     print("or\n  source matrix_env/bin/activate.fish  (if you are using fish "
           "terminal)")
