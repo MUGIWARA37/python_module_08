@@ -52,7 +52,7 @@ def run_oracle() -> None:
         print("  Database:      Connected to local instance")
     else:
         print("  Database:      Connected to local instance")
-    if config["api_key"]:    
+    if config["api_key"]:
         print("  API Access:    Authenticated")
     else:
         print("API Access: NOT Authenticated")
@@ -61,7 +61,6 @@ def run_oracle() -> None:
         print("  Zion Network:  Online")
     else:
         print("  Zion Network:  Offline")
-        
 
     print("\nEnvironment security check:")
     print("  [OK] No hardcoded secrets detected")
