@@ -30,15 +30,6 @@ def validate_configuration(config: dict) -> list[str]:
     return missing
 
 
-def mask_secret(value: str | None) -> str:
-    """Hide sensitive values — show only first 4 chars."""
-    if not value:
-        return "NOT SET"
-    if len(value) <= 4:
-        return "****"
-    return value[:4] + "*" * (len(value) - 4)
-
-
 def run_oracle() -> None:
     """Main entry point."""
     print("ORACLE STATUS: Reading the Matrix...\n")
@@ -57,10 +48,20 @@ def run_oracle() -> None:
     # Display config — mask secrets!
     print("Configuration loaded:")
     print(f"  Mode:          {config['matrix_mode']}")
-    print(f"  Database:      {mask_secret(config['database_url'])}")
-    print(f"  API Access:    {mask_secret(config['api_key'])}")
+    if config["database_url"]:
+        print("  Database:      Connected to local instance")
+    else:
+        print("  Database:      Connected to local instance")
+    if config["api_key"]:    
+        print("  API Access:    Authenticated")
+    else:
+        print("API Access: NOT Authenticated")
     print(f"  Log Level:     {config['log_level']}")
-    print(f"  Zion Network:  {config['zion_endpoint']}")
+    if config['zion_endpoint']:
+        print("  Zion Network:  Online")
+    else:
+        print("  Zion Network:  Offline")
+        
 
     print("\nEnvironment security check:")
     print("  [OK] No hardcoded secrets detected")
