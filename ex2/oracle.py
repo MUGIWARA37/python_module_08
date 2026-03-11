@@ -70,4 +70,7 @@ def run_oracle() -> None:
 
 
 if __name__ == "__main__":
-    run_oracle()
+    try:
+        run_oracle()
+    except Exception as e:
+        print(e)
