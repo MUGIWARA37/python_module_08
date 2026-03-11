@@ -3,6 +3,7 @@ name = "matrix-loading"
 version = "1.0.0"
 description = "Exercise 01 - Loading Programs: Matrix data analysis"
 authors = ["Zion Data Architect"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.10"
