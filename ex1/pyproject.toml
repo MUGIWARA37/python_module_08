@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "matrix-loading"
+version = "1.0.0"
+description = "Exercise 01 - Loading Programs: Matrix data analysis"
+authors = ["Zion Data Architect"]
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+pandas = ">=2.0.0"
+numpy = ">=1.24.0"
+matplotlib = ">=3.7.0"
+
+[tool.poetry.dev-dependencies]
+flake8 = ">=6.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
