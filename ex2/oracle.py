@@ -20,6 +20,11 @@ def load_configuration() -> dict:
 def validate_configuration(config: dict) -> list[str]:
     required = ["database_url", "api_key", "zion_endpoint"]
     missing = []
+    matrix_mode = config.get('matrix_mode')
+    msg = 'matrix_mode must be in development or production mode'
+
+    if matrix_mode and matrix_mode not in ('development', 'production'):
+        missing.append(msg.upper())
 
     for key in required:
         if not config.get(key):
