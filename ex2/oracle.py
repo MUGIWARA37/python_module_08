@@ -1,76 +1,78 @@
-import os
 import sys
-from dotenv import load_dotenv
+import os
+import site
 
 
-def load_configuration() -> dict:
-    """Load all config from environment (with .env fallback)."""
-    # load_dotenv() reads .env but does NOT override existing shell vars
-    load_dotenv()
-
-    config = {
-        "matrix_mode": os.getenv("MATRIX_MODE", "development"),
-        "database_url": os.getenv("DATABASE_URL"),
-        "api_key": os.getenv("API_KEY"),
-        "log_level": os.getenv("LOG_LEVEL", "DEBUG"),
-        "zion_endpoint": os.getenv("ZION_ENDPOINT"),
-    }
-    return config
+def is_virtual_env() -> bool:
+    # In a venv, sys.prefix points to the venv dir while sys.base_prefix points
+    # to the base Python install — they only differ when inside a venv
+    return sys.prefix != sys.base_prefix
 
 
-def validate_configuration(config: dict) -> list[str]:
-    """Check for missing required variables. Returns list of errors."""
-    required = ["database_url", "api_key", "zion_endpoint"]
-    missing = []
-
-    for key in required:
-        if not config.get(key):
-            missing.append(key.upper())
-
-    return missing
+def get_venv_name() -> str:
+    # sys.prefix is the full venv path (e.g. /home/user/matrix_env),
+    # basename extracts just the folder name
+    return os.path.basename(sys.prefix)
 
 
-def run_oracle() -> None:
-    """Main entry point."""
-    print("ORACLE STATUS: Reading the Matrix...\n")
+def get_package_path() -> str:
+    try:
+        # getsitepackages() returns a list of paths; grab the primary one
+        packages = site.getsitepackages()
+        return packages[0] if packages else "Unknown"
+    except AttributeError:
+        # fall back to the user-specific site-packages path
+        return site.getusersitepackages()
 
-    config = load_configuration()
-    missing = validate_configuration(config)
 
-    if missing:
-        print("WARNING: Missing required configuration:")
-        for var in missing:
-            print(f"  [MISSING] {var}")
-        print("\nCopy .env.example to .env and fill in the values.")
-        print("Run: cp .env.example .env")
-        sys.exit(1)
+def display_outside_venv() -> None:
+    print("MATRIX STATUS: You're still plugged in\n")
 
-    # Display config — mask secrets!
-    print("Configuration loaded:")
-    print(f"  Mode:          {config['matrix_mode']}")
-    if config["database_url"]:
-        print("  Database:      Connected to local instance")
+    print(f"Current Python: {sys.executable}")
+    print("Virtual Environment: None detected\n")
+
+    print("WARNING: You're in the global environment!")
+    print("The machines can see everything you install.\n")
+
+    # Provide OS-specific instructions for creating and activating a venv
+    print("To enter the construct, run:")
+    print("  python3 -m venv matrix_env or python3 -m virtualenv matrix_env")
+    print("  source matrix_env/bin/activate")
+    print("or\n  source matrix_env/bin/activate.fish  (if you are using fish "
+          "terminal)")
+    print("  matrix_env\\Scripts\\activate     # On Windows\n")
+    print("Then run this program again.")
+
+
+def display_inside_venv() -> None:
+    venv_name = get_venv_name()
+    venv_path = sys.prefix  # Full path to the active virtual environment
+    package_path = get_package_path()
+
+    print("MATRIX STATUS: Welcome to the construct")
+    print()
+    print(f"Current Python: {sys.executable}")
+    print(f"Virtual Environment: {venv_name}")
+    print(f"Environment Path: {venv_path}")
+    print()
+    print("SUCCESS: You're in an isolated environment!")
+    print("Safe to install packages without affecting")
+    print("the global system.")
+    print()
+    print("Package installation path:")
+    print(f"  {package_path}")
+
+
+def main() -> None:
+    # Route to the appropriate display based on venv status
+    if is_virtual_env():
+        display_inside_venv()
     else:
-        print("  Database:      Connected to local instance")
-    if config["api_key"]:
-        print("  API Access:    Authenticated")
-    else:
-        print("API Access: NOT Authenticated")
-    print(f"  Log Level:     {config['log_level']}")
-    if config['zion_endpoint']:
-        print("  Zion Network:  Online")
-    else:
-        print("  Zion Network:  Offline")
-
-    print("\nEnvironment security check:")
-    print("  [OK] No hardcoded secrets detected")
-    print("  [OK] .env file properly configured")
-    print("  [OK] Production overrides available")
-    print("\nThe Oracle sees all configurations.")
+        display_outside_venv()
 
 
 if __name__ == "__main__":
     try:
-        run_oracle()
+        main()
     except Exception as e:
         print(e)
